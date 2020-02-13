@@ -1,0 +1,41 @@
+---
+
+zookeeper_download_url: http://www.apache.org/dist/zookeeper
+zookeeper_version: 3.5.6
+zookeeper_installation_path: /u01/cnfkp
+zookeeper_download_location: /u01/cnfkp
+zookeeper_moved_folder_name: zk
+
+zkGroup: kfk
+zkUser: zkmgr
+zkGroupId: 7000
+zkUserId: 7000
+
+zkInstallDir: /u01
+zkDataDir: /u01/cnfkp/zk/zk-data
+zkLogDir: /u01/cnfkp/zk/logs
+
+tickTime: 2000
+initLimit: 10
+syncLimit: 5
+dataDir: /u01/cnfkp/zk/zk-data
+clientPort: 2181
+peerPort1: 2888
+peerPort2: 3888
+maxClientCnxns: 60
+server_1: sandbox-kfk-zk1.tuxlab.org.in
+server_2: sandbox-kfk-zk2.tuxlab.org.in
+server_3: sandbox-kfk-zk3.tuxlab.org.in
+
+zookeeper_jass_config_path: /u01/cnfkp/zk/conf/zookeeper-jaas.conf
+zookeeper_prometheus_java_agent: /u01/cnfkp/prometheus/jmx_prometheus_javaagent-0.3.1.jar
+zookeeper_jmx_port: 8080
+zookeeper_prometheus_conf_file: /u01/cnfkp/prometheus/zookeeper.yaml
+
+prometheus_folder: /u01/cnfkp/prometheus
+prometheus_java_agent_jar_url: https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.3.1/jmx_prometheus_javaagent-0.3.1.jar
+prometheus_zookeeper_url: https://raw.githubusercontent.com/prometheus/jmx_exporter/master/example_configs/zookeeper.yaml
+zookeeper_jaas_user1: user_super
+zookeeper_jaas_user1_pass: ZooPassword123 
+zookeeper_jaas_user2: user_kafka
+zookeeper_jaas_user2_pass: ZooPassword123

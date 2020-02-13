@@ -1,0 +1,9 @@
+---
+zkGroup: kfk
+zkUser: zkmgr
+zkGroupId: 7000
+zkUserId: 7000
+
+zkInstallDir: /u01/cnfkp
+zkDataDir: /u01/cnfkp/zk/zk-data
+zkLogDir: /u01/cnfkp/zk/logs

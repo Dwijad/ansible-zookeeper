@@ -1,0 +1,21 @@
+---
+
+- name: Creating zookeeper group
+  group:
+    name: "{{  zkGroup }}"
+    gid: "{{ zkGroupId }}"
+    state: present
+
+- name: Creating zookeeper user
+  user:
+    name: "{{ zkUser }}"
+    comment: Zookeeper Default User
+    create_home: yes
+    home: /home/zkmgr
+    uid: "{{ zkUserId }}"
+    group: "{{ zkGroup }}"
+    append: yes
+    shell: /bin/bash
+    state: present
+    password: $1$XB1.MbhY$pTH4ENrDTo2naKrsFHpFB/
+    # Generate hash of password using $ echo 'welcome' | openssl passwd -1 -stdin

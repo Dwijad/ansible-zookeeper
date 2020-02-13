@@ -1,0 +1,20 @@
+---
+
+- name: Creating Zookeeper installation dir | {{ zkInstallDir }}
+  file:
+    path: "{{ zkInstallDir }}"
+    state: directory
+    owner: "{{ zkUser }}"
+    group: "{{ zkGroup }}"
+    mode: 0775
+
+#- name: Creating Zookeeper data/log directories
+#  file:
+#    path: "{{ item }}"
+#    state: directory
+#    owner: "{{ kafkaUser }}"
+#    group: "{{ kafkaGroup }}"
+#    mode: 0775
+#  loop:
+#    - "{{ zkDataDir }}"
+#    - "{{ zkLogDir }}"

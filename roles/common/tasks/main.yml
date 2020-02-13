@@ -1,0 +1,10 @@
+---
+
+- name: Install common utils
+  include_tasks: utils.yml  
+
+- name: Create zookeeper  user and group
+  include_tasks: createUser.yml
+
+- name: Create directory structure for zookeeper
+  include_tasks: createDir.yml

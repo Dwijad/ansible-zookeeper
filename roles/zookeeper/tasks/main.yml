@@ -1,0 +1,135 @@
+---
+
+- name: Delete zookeeper folder from previous installation
+  file:
+     path: "{{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}"
+     state: absent
+
+- name: Download zookeeper(tar.gz)
+  get_url: url={{ zookeeper_download_url }}/zookeeper-{{ zookeeper_version }}/apache-zookeeper-{{ zookeeper_version }}-bin.tar.gz dest={{ zookeeper_download_location }}
+
+- name: Unarchive zookeeper
+  unarchive: src={{ zookeeper_download_location }}/apache-zookeeper-{{ zookeeper_version }}-bin.tar.gz dest={{ zookeeper_download_location }} copy=no
+
+- name: Move zookeeper
+  command: mv {{ zookeeper_download_location }}/apache-zookeeper-{{ zookeeper_version }}-bin {{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}
+  
+- name: Change ownership of Zookeeper folder
+  command_warnings: false
+  command: chown -R {{ zkUser }}:{{ zkGroup }} {{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}
+
+- name: Delete extracted folder
+  command: rm -rf {{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}/apache-zookeeper-{{ zookeeper_version }}-bin
+
+- name: Creating Zookeeper data/log directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ zkUser }}"
+    group: "{{ zkGroup }}"
+    mode: 0775
+  loop:
+    - "{{ zkDataDir }}"
+    - "{{ zkLogDir }}"
+    - "{{ prometheus_folder }}"
+
+- name: Download zookeeper java agent for prometheus
+  get_url: 
+     url: "{{ prometheus_java_agent_jar_url }}"  
+     dest: "{{ prometheus_folder }}"
+     owner: "{{ zkUser }}"
+     group: "{{ zkGroup }}"
+     mode: "0775"
+
+- name: Download  prometheus config for Zookeeper
+  get_url:
+     url: "{{ prometheus_zookeeper_url }}"
+     dest: "{{ prometheus_folder }}"
+     owner: "{{ zkUser }}"
+     group: "{{ zkGroup }}"
+     mode: "0775"
+
+
+- name: Update bash profile
+  lineinfile:
+     path: /home/{{ zkUser }}/.bash_profile
+     line:  export PATH=$PATH:{{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}/bin
+
+- name: Reload new environment
+  become_user: "{{ zkUser }}"
+  shell: cd  /home/{{ zkUser }} && source .bash_profile
+  args:
+     executable: /bin/bash
+
+- name: Set Zookeeper ID
+  copy: 
+    dest: "{{ zkDataDir }}/myid"
+    content: |
+        {{ zookeeper_id }}
+
+- name: Copying zookeeper configuration file
+  template:
+    src: templates/zoo.cfg.j2
+    dest: "{{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}/conf/zoo.cfg"
+
+- name: Adding extra argument for JMX port and prometheus configuration
+  blockinfile:
+    dest: "{{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}/bin/zkServer.sh"
+    insertbefore:  '\# See the following page for extensive details on setting' 
+    content: |
+       EXTRA_ARGS="-Djava.security.auth.login.config={{ zookeeper_jass_config_path }} -javaagent:{{ zookeeper_prometheus_java_agent }}={{ zookeeper_jmx_port }}:{{ zookeeper_prometheus_conf_file }}"      
+
+- name: Add extra argument to nohup command
+  lineinfile:
+    dest: "{{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}/bin/zkServer.sh"
+    regexp: '"-Dzookeeper.log.file=\${ZOO_LOG_FILE}"\s"-Dzookeeper.root.logger=\${ZOO_LOG4J_PROP}"\s\\'
+    line: '"-Dzookeeper.log.file="${ZOO_LOG_FILE}" "-Dzookeeper.root.logger="${ZOO_LOG4J_PROP}" $EXTRA_ARGS \'
+    firstmatch: yes
+
+- name: Add extra argument to echo command
+  lineinfile:
+    dest: "{{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}/bin/zkServer.sh"
+    regexp: '-Dzookeeper.log.file=\\"\${ZOO_LOG_FILE}\\"\s-Dzookeeper.root.logger=\\"\${ZOO_LOG4J_PROP}\\"\s\\'
+    line: '-Dzookeeper.log.file=\"${ZOO_LOG_FILE}\" -Dzookeeper.root.logger=\"${ZOO_LOG4J_PROP}\" $EXTRA_ARGS \'
+
+- name: Create Zookeeper JAAS config
+  copy:
+    dest: "{{ zookeeper_jass_config_path }}"
+    content: |
+      Server {
+                org.apache.zookeeper.server.auth.DigestLoginModule required
+                {{ zookeeper_jaas_user1 }}="{{ zookeeper_jaas_user1_pass }}"
+                {{ zookeeper_jaas_user2 }}="{{ zookeeper_jaas_user2_pass }}";
+      };
+
+
+- name: Start Zookeeper
+  become_user: "{{ zkUser }}"
+  shell: /u01/cnfkp/zk/bin/zkServer.sh start
+  args:
+     executable: /bin/bash
+
+- name: Flush all iptables rule
+  become_user: root
+  shell: iptables -F
+  args:
+     executable: /bin/bash
+
+- name: Save iptable rule
+  become_user: root
+  shell: service iptables save
+  args:
+     executable: /bin/bash
+
+- name: IPTABLE settings
+  become_user: root
+  shell: iptables -A INPUT -p tcp --dport {{ clientPort }} -j ACCEPT  &&  iptables -A INPUT -p tcp --dport {{ peerPort1 }} -j ACCEPT && iptables -A INPUT -p tcp --dport {{ peerPort2 }} -j ACCEPT 
+  args:
+     executable: /bin/bash
+
+- name: Save and start IPTABLE
+  become_user: root
+  shell: service iptables save && service iptables restart
+  args:
+     executable: /bin/bash
+
