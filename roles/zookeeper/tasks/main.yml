@@ -15,7 +15,6 @@
   command: mv {{ zookeeper_download_location }}/apache-zookeeper-{{ zookeeper_version }}-bin {{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}
   
 - name: Change ownership of Zookeeper folder
-  command_warnings: false
   command: chown -R {{ zkUser }}:{{ zkGroup }} {{ zookeeper_download_location }}/{{ zookeeper_moved_folder_name }}
 
 - name: Delete extracted folder
